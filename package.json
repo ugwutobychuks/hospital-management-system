@@ -7,26 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --coverage",
-    "test:watch": "jest --watch",
-    "lint": "eslint src/",
-    "migrate": "node src/database/migrations/run.js",
-    "seed": "node src/database/seeders/run.js",
-    "docker:build": "docker build -t hms:latest .",
-    "docker:run": "docker run -p 3000:3000 --env-file .env hms:latest",
-    "docker:compose": "docker-compose up -d",
-    "health-check": "curl http://localhost:3000/api/v1/health"
+    "docker:compose": "docker-compose up -d"
   },
-  "keywords": [
-    "hospital",
-    "management",
-    "system",
-    "healthcare",
-    "Nigeria",
-    "EHR",
-    "EMR",
-    "SaaS"
-  ],
   "author": "HMS Development Team",
   "license": "MIT",
   "dependencies": {
@@ -35,7 +17,7 @@
     "pg": "^8.10.0",
     "redis": "^4.6.10",
     "dotenv": "^16.3.1",
-    "jsonwebtoken": "^9.1.0",
+    "jsonwebtoken": "^9.0.2",
     "bcryptjs": "^2.4.3",
     "joi": "^17.11.0",
     "cors": "^2.8.5",
@@ -43,39 +25,25 @@
     "morgan": "^1.10.0",
     "uuid": "^9.0.1",
     "axios": "^1.6.2",
-    "twilio": "^3.93.3",
-    "firebase-admin": "^12.0.0",
+    "twilio": "^3.84.0",
     "multer": "^1.4.5-lts.1",
-    "aws-sdk": "^2.1507.0",
     "sharp": "^0.33.0",
     "nodemailer": "^6.9.7",
     "socket.io": "^4.7.2",
-    "kafka-node": "^5.8.0",
     "bull": "^4.11.4",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pdfkit": "^0.13.0",
-    "exceljs": "^4.3.0",
-    "moment-timezone": "^0.5.45",
+    "qrcode": "^1.5.3",
     "validator": "^13.11.0",
     "lodash": "^4.17.21",
-    "rate-limiter-flexible": "^3.0.0",
     "winston": "^3.11.0",
     "compression": "^1.7.4",
-    "body-parser": "^1.20.2",
-    "qrcode": "^1.5.3"
+    "moment-timezone": "^0.5.45",
+    "exceljs": "^4.3.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "jest": "^29.7.0",
-    "supertest": "^6.3.3",
-    "eslint": "^8.54.0",
-    "prettier": "^3.1.0",
-    "@faker-js/faker": "^8.3.1"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "nodemon": "^3.0.1"
   }
 }
