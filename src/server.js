@@ -1,15 +1,25 @@
 import express from 'express';
 import dotenv from 'dotenv';
-
+import authRoutes from './routes/authRoutes.js';
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+import cors from 'cors';
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+
 // Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/auth', authRoutes);
 
 // Health check endpoints
 app.get('/health', (req, res) => {
