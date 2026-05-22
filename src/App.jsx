@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './components/Dashboard';
+import './index.css';
 
 function App() {
   const isAuthenticated = () => {

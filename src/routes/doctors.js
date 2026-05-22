@@ -1,104 +1,112 @@
 import express from 'express';
-import { query } from '../config/database.js';
-import { logger } from '../config/logger.js';
-import { authenticate, authorize } from '../middlewares/auth.js';
-
 const router = express.Router();
 
-// Create Doctor Profile
-router.post('/', authenticate, authorize('admin'), async (req, res) => {
+let doctors = [
+  {
+    id: 1,
+    name: 'Dr. John Smith',
+    specialization: 'Cardiology',
+    experience: 15,
+    email: 'john.smith@hospital.com',
+    phone: '+1 (555) 123-4567',
+    availability: 'Mon-Fri 9AM-5PM',
+    qualification: 'MD, FACC',
+    consultationFee: 150
+  },
+  {
+    id: 2,
+    name: 'Dr. Sarah Johnson',
+    specialization: 'Pediatrics',
+    experience: 12,
+    email: 'sarah.johnson@hospital.com',
+    phone: '+1 (555) 234-5678',
+    availability: 'Mon-Thu 10AM-6PM',
+    qualification: 'MD, FAAP',
+    consultationFee: 120
+  },
+  {
+    id: 3,
+    name: 'Dr. Michael Chen',
+    specialization: 'Neurology',
+    experience: 18,
+    email: 'michael.chen@hospital.com',
+    phone: '+1 (555) 345-6789',
+    availability: 'Tue-Sat 8AM-4PM',
+    qualification: 'MD, PhD, FAAN',
+    consultationFee: 200
+  },
+  {
+    id: 4,
+    name: 'Dr. Emily Williams',
+    specialization: 'Orthopedics',
+    experience: 10,
+    email: 'emily.williams@hospital.com',
+    phone: '+1 (555) 456-7890',
+    availability: 'Mon-Fri 8AM-5PM',
+    qualification: 'MD, FAAOS',
+    consultationFee: 160
+  },
+  {
+    id: 5,
+    name: 'Dr. Robert Brown',
+    specialization: 'Dermatology',
+    experience: 14,
+    email: 'robert.brown@hospital.com',
+    phone: '+1 (555) 567-8901',
+    availability: 'Mon-Wed 9AM-5PM',
+    qualification: 'MD, FAAD',
+    consultationFee: 140
+  },
+  {
+    id: 6,
+    name: 'Dr. Lisa Garcia',
+    specialization: 'Obstetrics & Gynecology',
+    experience: 11,
+    email: 'lisa.garcia@hospital.com',
+    phone: '+1 (555) 678-9012',
+    availability: 'Mon-Fri 9AM-5PM',
+    qualification: 'MD, FACOG',
+    consultationFee: 170
+  }
+];
+
+// GET all doctors (no auth required for testing)
+router.get('/', async (req, res) => {
   try {
-    const { userId, specialization, licenseNumber, phone } = req.body;
-
-    const result = await query(
-      `INSERT INTO doctors (user_id, specialization, license_number, phone, registration_date, created_at)
-       VALUES ($1, $2, $3, $4, NOW(), NOW())
-       RETURNING *`,
-      [userId, specialization, licenseNumber, phone]
-    );
-
-    logger.info('Doctor profile created', { doctorId: result.rows[0].id, userId });
-
-    res.status(201).json({
+    res.json({
       success: true,
-      message: 'Doctor profile created successfully',
-      data: result.rows[0],
+      data: doctors,
+      total: doctors.length
     });
   } catch (error) {
-    logger.error('Doctor creation error', { error: error.message });
-    res.status(500).json({
-      success: false,
-      message: 'Doctor profile creation failed',
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Get All Doctors
-router.get('/', authenticate, async (req, res) => {
+// GET single doctor
+router.get('/:id', async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
-
-    const countResult = await query('SELECT COUNT(*) FROM doctors');
-    const total = parseInt(countResult.rows[0].count);
-
-    const result = await query(
-      `SELECT d.*, u.first_name, u.last_name, u.email 
-       FROM doctors d 
-       JOIN users u ON d.user_id = u.id 
-       ORDER BY u.first_name ASC 
-       LIMIT $1 OFFSET $2`,
-      [limit, offset]
-    );
-
-    res.status(200).json({
-      success: true,
-      data: result.rows,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
-      },
-    });
-  } catch (error) {
-    logger.error('Get doctors error', { error: error.message });
-    res.status(500).json({
-      success: false,
-      message: 'Failed to retrieve doctors',
-    });
-  }
-});
-
-// Get Single Doctor
-router.get('/:id', authenticate, async (req, res) => {
-  try {
-    const result = await query(
-      `SELECT d.*, u.first_name, u.last_name, u.email 
-       FROM doctors d 
-       JOIN users u ON d.user_id = u.id 
-       WHERE d.id = $1`,
-      [req.params.id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor not found',
-      });
+    const doctor = doctors.find(d => d.id === parseInt(req.params.id));
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
-
-    res.status(200).json({
-      success: true,
-      data: result.rows[0],
-    });
+    res.json({ success: true, data: doctor });
   } catch (error) {
-    logger.error('Get doctor error', { error: error.message });
-    res.status(500).json({
-      success: false,
-      message: 'Failed to retrieve doctor',
-    });
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST create doctor
+router.post('/', async (req, res) => {
+  try {
+    const newDoctor = {
+      id: doctors.length + 1,
+      ...req.body
+    };
+    doctors.push(newDoctor);
+    res.json({ success: true, data: newDoctor, message: 'Doctor created successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

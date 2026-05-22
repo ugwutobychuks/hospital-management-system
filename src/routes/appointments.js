@@ -1,119 +1,60 @@
 import express from 'express';
-import { query } from '../config/database.js';
-import { logger } from '../config/logger.js';
-import { authenticate } from '../middlewares/auth.js';
-
 const router = express.Router();
 
-// Create Appointment
-router.post('/', authenticate, async (req, res) => {
+let appointments = [
+  {
+    id: 1,
+    patientName: 'John Doe',
+    doctorName: 'Dr. John Smith',
+    date: '2024-01-25',
+    time: '10:00 AM',
+    reason: 'Chest pain and shortness of breath',
+    status: 'scheduled',
+    type: 'Consultation'
+  },
+  {
+    id: 2,
+    patientName: 'Jane Smith',
+    doctorName: 'Dr. Sarah Johnson',
+    date: '2024-01-26',
+    time: '2:00 PM',
+    reason: "Child's annual checkup and vaccinations",
+    status: 'scheduled',
+    type: 'Checkup'
+  },
+  {
+    id: 3,
+    patientName: 'Robert Johnson',
+    doctorName: 'Dr. Michael Chen',
+    date: '2024-01-27',
+    time: '11:30 AM',
+    reason: 'Severe headaches and memory issues',
+    status: 'scheduled',
+    type: 'Neurology Consultation'
+  }
+];
+
+let nextId = 4;
+
+router.get('/', async (req, res) => {
   try {
-    const { patientId, doctorId, appointmentDate, notes } = req.body;
-
-    const result = await query(
-      `INSERT INTO appointments (patient_id, doctor_id, appointment_date, status, notes, created_at)
-       VALUES ($1, $2, $3, 'scheduled', $4, NOW())
-       RETURNING *`,
-      [patientId, doctorId, appointmentDate, notes]
-    );
-
-    logger.info('Appointment created', { appointmentId: result.rows[0].id, patientId, doctorId });
-
-    res.status(201).json({
+    res.json({
       success: true,
-      message: 'Appointment scheduled successfully',
-      data: result.rows[0],
+      data: appointments,
+      total: appointments.length
     });
   } catch (error) {
-    logger.error('Appointment creation error', { error: error.message });
-    res.status(500).json({
-      success: false,
-      message: 'Appointment scheduling failed',
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Get Appointments for Patient
-router.get('/patient/:patientId', authenticate, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const result = await query(
-      `SELECT a.*, d.specialization, u.first_name, u.last_name 
-       FROM appointments a 
-       JOIN doctors d ON a.doctor_id = d.id 
-       JOIN users u ON d.user_id = u.id 
-       WHERE a.patient_id = $1 
-       ORDER BY a.appointment_date DESC`,
-      [req.params.patientId]
-    );
-
-    res.status(200).json({
-      success: true,
-      data: result.rows,
-    });
+    const newAppointment = { id: nextId++, ...req.body };
+    appointments.push(newAppointment);
+    res.json({ success: true, data: newAppointment, message: 'Appointment created successfully' });
   } catch (error) {
-    logger.error('Get patient appointments error', { error: error.message });
-    res.status(500).json({
-      success: false,
-      message: 'Failed to retrieve appointments',
-    });
-  }
-});
-
-// Get Appointments for Doctor
-router.get('/doctor/:doctorId', authenticate, async (req, res) => {
-  try {
-    const result = await query(
-      `SELECT a.*, p.first_name, p.last_name, p.hospital_id 
-       FROM appointments a 
-       JOIN patients p ON a.patient_id = p.id 
-       WHERE a.doctor_id = $1 
-       ORDER BY a.appointment_date ASC`,
-      [req.params.doctorId]
-    );
-
-    res.status(200).json({
-      success: true,
-      data: result.rows,
-    });
-  } catch (error) {
-    logger.error('Get doctor appointments error', { error: error.message });
-    res.status(500).json({
-      success: false,
-      message: 'Failed to retrieve appointments',
-    });
-  }
-});
-
-// Update Appointment Status
-router.put('/:id', authenticate, async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    const result = await query(
-      `UPDATE appointments SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-      [status, req.params.id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Appointment not found',
-      });
-    }
-
-    logger.info('Appointment updated', { appointmentId: req.params.id, status });
-
-    res.status(200).json({
-      success: true,
-      message: 'Appointment updated successfully',
-      data: result.rows[0],
-    });
-  } catch (error) {
-    logger.error('Appointment update error', { error: error.message });
-    res.status(500).json({
-      success: false,
-      message: 'Appointment update failed',
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

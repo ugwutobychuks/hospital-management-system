@@ -1,66 +1,83 @@
 import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes.js';
-// Load environment variables
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-import cors from 'cors';
-
+// CORS configuration
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: ['http://localhost:5173', 'http://98.84.56.161:5173', 'http://172.31.0.209:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-
-// Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/api/auth', authRoutes);
+
+// Serve static files from public directory (for dashboard)
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Health check endpoints
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.get('/api/v1/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    service: 'hospital-management-system',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'healthy', service: 'hospital-management-system' });
 });
+
+// Import routes
+import authRouter from './routes/auth.js';
+import doctorsRouter from './routes/doctors.js';
+import patientsRouter from './routes/patients.js';
+import appointmentsRouter from './routes/appointments.js';
+import medicationsRouter from './routes/medications.js';
+
+// Use routes
+app.use('/api/auth', authRouter);
+app.use('/api/v1/doctors', doctorsRouter);
+app.use('/api/v1/patients', patientsRouter);
+app.use('/api/v1/appointments', appointmentsRouter);
+app.use('/api/v1/medications', medicationsRouter);
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    name: 'Hospital Management System',
+    name: 'Hospital Management System API',
     version: '1.0.0',
-    status: 'running'
+    endpoints: {
+      auth: '/api/auth/login',
+      doctors: '/api/v1/doctors',
+      patients: '/api/v1/patients',
+      appointments: '/api/v1/appointments',
+      medications: '/api/v1/medications'
+    }
   });
 });
 
-// Error handler
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: err.message 
+    success: false, 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : {}
   });
 });
 
-// Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server is running on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/health`);
-  console.log(`📍 API: http://localhost:${PORT}/api/v1/health`);
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`📍 Auth endpoint: http://localhost:${PORT}/api/auth/login`);
+  console.log(`📍 Doctors endpoint: http://localhost:${PORT}/api/v1/doctors`);
 });
 
 export default app;
